@@ -32,7 +32,7 @@ setuptools.setup(
     version          = version,
     long_description = long_description,
     long_description_content_type = "text/markdown",
-    url              = "todo", #TODO: add url
+    url              = "https://github.com/jnelson18/pyquantrf",
     packages         = ['fluxcom']+setuptools.find_namespace_packages(),
     classifiers      = [
         "Programming Language :: Python :: 3",
