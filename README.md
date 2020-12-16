@@ -10,7 +10,9 @@ Based on original MATLAB code from Martin Jung with input from Fabian Gans
 
 # Installation
 
-Insall vai conda.
+Insall via conda:
+
+conda install -c jnelson18 pyquantrf
 
 # Example Usage
 
