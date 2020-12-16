@@ -1,0 +1,31 @@
+package:
+  name: "pyquantrf"
+  version: "0.0.1"
+
+source:
+  git_rev: v0.0.1
+  git_url: https://github.com/jnelson18/pyquantrf
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv "
+
+requirements:
+  host:
+    - pip
+    - python
+  run:
+    - python
+    - numpy
+    - scikit-learn
+    - numba
+
+test:
+  imports:
+    - pyquantrf
+
+about:
+  home: https://github.com/jnelson18/pyquantrf
+  license: GPLv3
+  license_family: GPL
+  summary: Quantile random forest regression
