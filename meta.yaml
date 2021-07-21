@@ -18,7 +18,7 @@ requirements:
     - python
     - numpy
     - scikit-learn
-    - numba
+    - numba >=0.5
 
 test:
   imports:
