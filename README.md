@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/321992721.svg)](https://zenodo.org/badge/latestdoi/321992721)
+
 # Quantile Random Forest for python
 
 Here is a [quantile random forest](http://jmlr.org/papers/v7/meinshausen06a.html) implementation that utilizes the [SciKitLearn](https://scikit-learn.org/stable/) RandomForestRegressor. This implementation uses [numba](https://numba.pydata.org) to improve efficiency.
