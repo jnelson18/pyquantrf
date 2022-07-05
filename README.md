@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/321992721.svg)](https://zenodo.org/badge/latestdoi/321992721)
+
 # Quantile Random Forest for python
 
 Here is a [quantile random forest](http://jmlr.org/papers/v7/meinshausen06a.html) implementation that utilizes the [SciKitLearn](https://scikit-learn.org/stable/) RandomForestRegressor. This implementation uses [numba](https://numba.pydata.org) to improve efficiency.
@@ -122,4 +124,8 @@ Meinshausen, N. (2006) ‘Quantile regression forests’, Journal of Machine Lea
 
 # Citation
 
-To cite the latest version of this code, or a specific version, please request a citation from jnelson@bgc-jena.mpg.de
+The latest citable version of this code is v0.0.3doi, which can be cited using:
+
+[![DOI](https://zenodo.org/badge/321992721.svg)](https://zenodo.org/badge/latestdoi/321992721)
+
+To cite a specific version, please request a citation from jnelson@bgc-jena.mpg.de
