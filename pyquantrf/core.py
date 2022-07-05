@@ -40,6 +40,43 @@ def find_quant(trainy, train_tree_node_ID, pred_tree_node_ID, qntl):
     return out
 
 
+@jit(nopython=True, parallel=True)
+def find_sample(trainy, train_tree_node_ID, pred_tree_node_ID, n_draws):
+    """find_quant(trainy, train_tree_node_ID, pred_tree_node_ID, qntl)
+    
+    Aggregates the leaves from the random forest and calculates the quantiles.
+
+    Aggregates leaves based on the tree node indexes from both the training
+    and prediction data. Values from the training target data is then used
+    to rebuild the leaves for each prediction, which is then summarized
+    to the specified quantiles. This is the slowest step in the process,
+    so numba is used to speed up this step.
+
+    Parameters
+    ----------
+    trainy : numpy array of shape (n_target)
+        The origianl training target data
+    train_tree_node_ID : numpy array of shape (n_training_samples, n_trees)
+        array of leaf indices from the training data
+    pred_tree_node_ID : numpy array of shape (n_predict_samples, n_trees)
+        array of leaf indices from the prediction data
+    qntl : numpy array
+        quantiles used, must range from 0 to 1
+
+    Returns
+    -------
+    out : numpy array of shape (n_predict_samples, n_qntl)
+        prediction for each quantile
+    """
+    npred = pred_tree_node_ID.shape[0]
+    out = np.zeros((npred, *trainy.shape[1:], n_draws))*np.nan
+    for i in prange(pred_tree_node_ID.shape[0]):
+        idxs = np.where(train_tree_node_ID == pred_tree_node_ID[i, :])[0]
+        sample_idx = np.random.choice(idxs, n_draws)#, replace=False)
+        out[i, :] = trainy[sample_idx].T
+    return out
+
+
 class QuantileRandomForestRegressor:
     """A quantile random forest regressor based on the scikit-learn RandomForestRegressor
     
@@ -92,7 +129,10 @@ class QuantileRandomForestRegressor:
         """
         Predict regression target for X.
         The predicted regression target of an input sample is computed as the
-        mean predicted regression targets of the trees in the forest.
+        quantile predicted regression targets of the trees in the forest.
+        
+        Note: Not possible for multioutput regression.
+        
         Parameters
         ----------
         X : {array-like, sparse matrix} of shape (n_samples, n_features)
@@ -104,9 +144,12 @@ class QuantileRandomForestRegressor:
             0 and 1 inclusive. Passed to numpy.quantile.
         Returns
         -------
-        y : ndarray of shape (n_samples, n_qntl)
+        y : ndarray of shape (n_samples, n_quantiles)
             The predicted values.
         """
+        if len(self.trainy.shape)>1:
+            raise RuntimeError("Quantile prediction is not possible with multioutput regression.")
+        
         qntl = np.asanyarray(qntl)
         ntrees = self.forest.n_estimators
         ntrain = self.trainy.shape[0]
@@ -122,6 +165,39 @@ class QuantileRandomForestRegressor:
                                 pred_tree_node_ID, qntl)
 
         return ypred_pcts
+    
+    def predict_sample(self, X, n_draws):
+        """
+        Predict regression target for X.
+        The predicted regression target of an input sample is computed as a
+        random sample of the predicted regression targets of the trees in the forest.
+        Parameters
+        ----------
+        X : {array-like, sparse matrix} of shape (n_samples, n_features)
+            The input samples. Internally, its dtype will be converted to
+            ``dtype=np.float32``. If a sparse matrix is provided, it will be
+            converted into a sparse ``csr_matrix``.
+        n_sample : {int}
+            number of sample to draw from the predicted regression targets
+        Returns
+        -------
+        y : ndarray of shape (n_samples, n_draws) or (n_samples, n_outputs, n_draws)
+            The predicted values.
+        """
+        ntrees = self.forest.n_estimators
+        ntrain = self.trainy.shape[0]
+        train_tree_node_ID = np.zeros([ntrain, ntrees])
+        npred = X.shape[0]
+        pred_tree_node_ID = np.zeros([npred, ntrees])
+
+        for i in range(ntrees):
+            train_tree_node_ID[:, i] = self.forest.estimators_[i].apply(self.trainX)
+            pred_tree_node_ID[:, i] = self.forest.estimators_[i].apply(X)
+
+        ypred_draws = find_sample(self.trainy, train_tree_node_ID,
+                                pred_tree_node_ID, n_draws)
+
+        return ypred_draws
 
     def apply(self, X):
         """

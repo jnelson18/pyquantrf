@@ -20,6 +20,7 @@ This example estimates the median and 95% prediction interval for the boston hou
 a 5-fold corss validation.
 
 ```python
+import numpy as np
 from pyquantrf import QuantileRandomForestRegressor
 from sklearn.datasets import load_boston
 
@@ -39,7 +40,7 @@ for f in range(nfolds):
     out_fold = folds[f]
     in_folds = np.concatenate([folds[fold] for fold in range(nfolds) if fold != f])
     qrf.fit(data.data[in_folds], data.target[in_folds])
-    pred[out_fold] = qrf.predict(data.data[out_fold], [0.025, 0.5, 0.975])
+    pred[out_fold] = qrf.predict(data.data[out_fold], qntl)
 ```
 
 This example follows Meinshausen 2006, from which Figure 3 can be recreated with (requires matplotlib):
@@ -83,6 +84,36 @@ axs[1].set_xlim(-10, 520)
 axs[1].set_ylim(-27, 32)
 axs[1].set_xlabel('ordered samples')
 axs[1].set_ylabel('observed values and prediction intervals (centered)')
+```
+
+Random sampling from the predictions leaves is possible with the `pred_sample` function, which is also possible
+with multioutput regression:
+
+```python
+from pyquantrf import QuantileRandomForestRegressor
+from sklearn.datasets import load_linnerud
+import numpy as np
+
+qrf = QuantileRandomForestRegressor(nthreads = 4,
+                                    n_estimators=1000,
+                                    min_samples_leaf = 10,)
+
+n_draws = 100
+qntl    = np.array([0.025, 0.5, 0.975])
+
+data = load_linnerud()
+dataIDX = np.arange(data.target.shape[0])
+nfolds  = 5
+folds   = np.array_split(dataIDX, 5)
+pred_sample = np.zeros([*data.target.shape, n_draws]) * np.nan
+
+
+for f in range(nfolds):
+    out_fold = folds[f]
+    in_folds = np.concatenate([folds[fold] for fold in range(nfolds) if fold != f])
+
+    qrf.fit(data.data[in_folds], data.target[in_folds])
+    pred_sample[out_fold] = qrf.predict_sample(data.data[out_fold], n_draws)
 ```
 
 # References
