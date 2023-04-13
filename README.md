@@ -18,13 +18,13 @@ conda install -c jnelson18 pyquantrf
 
 # Example Usage
 
-This example estimates the median and 95% prediction interval for the boston housing dataset in
+This example estimates the median and 95% prediction interval for the California housing dataset in
 a 5-fold corss validation.
 
 ```python
 import numpy as np
 from pyquantrf import QuantileRandomForestRegressor
-from sklearn.datasets import load_boston
+from sklearn.datasets import fetch_california_housing
 
 qrf = QuantileRandomForestRegressor(nthreads = 4,
                                     n_estimators=1000,
@@ -32,8 +32,8 @@ qrf = QuantileRandomForestRegressor(nthreads = 4,
 
 qntl = np.array([0.025, 0.5, 0.975])
 
-data = load_boston()
-dataIDX = np.arange(data.target.size)
+data = fetch_california_housing()
+dataIDX = np.arange(data.target.size)[:500]
 nfolds  = 5
 folds   = np.array_split(dataIDX, 5)
 pred    = np.zeros([data.target.size, qntl.size]) * np.nan
@@ -45,12 +45,12 @@ for f in range(nfolds):
     pred[out_fold] = qrf.predict(data.data[out_fold], qntl)
 ```
 
-This example follows Meinshausen 2006, from which Figure 3 can be recreated with (requires matplotlib):
+This example follows Meinshausen 2006, from which Figure 3 can be recreated with (requires matplotlib). Note that the dataset is not the same as in the paper.:
 
 ```python
 from matplotlib import pyplot as pl
 
-fix, axs = pl.subplots(nrows=1, ncols=2, figsize=(10, 4))
+fig, axs = pl.subplots(nrows=1, ncols=2, figsize=(10, 4))
 
 for p in pred:
     axs[0].plot([p[1], p[1]], [p[0], p[2]], lw=4, alpha=0.2, color='LightGrey')
@@ -59,12 +59,12 @@ axs[0].plot(pred[:, 1], data.target, marker='.', color='r', lw=0)
 axs[0].plot(pred[:, 1], pred[:, 0], marker='_', color='k', lw=0)
 axs[0].plot(pred[:, 1], pred[:, 2], marker='_', color='k', lw=0)
 
-axs[0].set_xlim(5, 52)
-axs[0].set_ylim(2, 52)
+axs[0].set_xlim(0.5, 5.2)
+axs[0].set_ylim(0.5, 5.2)
 axs[0].set_xlabel('fitted values (conditional median)')
 axs[0].set_ylabel('observed values')
 
-xlin = np.arange(2, 52)
+xlin = np.arange(0.5, 5.2)
 axs[0].plot(xlin, xlin, lw=1, color='LightGrey')
 
 interval = pred[:, 2]-pred[:, 0]
@@ -83,7 +83,7 @@ axs[1].plot(xlin, pred_centered[sortIDX][:, 0], marker='_', color='k', lw=0)
 axs[1].plot(xlin, pred_centered[sortIDX][:, 2], marker='_', color='k', lw=0)
 
 axs[1].set_xlim(-10, 520)
-axs[1].set_ylim(-27, 32)
+axs[1].set_ylim(-3, 3)
 axs[1].set_xlabel('ordered samples')
 axs[1].set_ylabel('observed values and prediction intervals (centered)')
 ```

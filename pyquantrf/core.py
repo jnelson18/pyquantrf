@@ -41,16 +41,15 @@ def find_quant(trainy, train_tree_node_ID, pred_tree_node_ID, qntl):
 
 
 @jit(nopython=True, parallel=True)
-def find_sample(trainy, train_tree_node_ID, pred_tree_node_ID, n_draws):
-    """find_quant(trainy, train_tree_node_ID, pred_tree_node_ID, qntl)
+def find_sample(trainy, train_tree_node_ID, pred_tree_node_ID, outshape):
+    """find_sample(trainy, train_tree_node_ID, pred_tree_node_ID, outshape)
     
-    Aggregates the leaves from the random forest and calculates the quantiles.
+    Returns a random sample from the leaves from the random forest.
 
     Aggregates leaves based on the tree node indexes from both the training
     and prediction data. Values from the training target data is then used
-    to rebuild the leaves for each prediction, which is then summarized
-    to the specified quantiles. This is the slowest step in the process,
-    so numba is used to speed up this step.
+    to rebuild the leaves for each prediction, randomly sampled from. This
+    is the slowest step in the process, so numba is used to speed up this step.
 
     Parameters
     ----------
@@ -60,19 +59,20 @@ def find_sample(trainy, train_tree_node_ID, pred_tree_node_ID, n_draws):
         array of leaf indices from the training data
     pred_tree_node_ID : numpy array of shape (n_predict_samples, n_trees)
         array of leaf indices from the prediction data
-    qntl : numpy array
-        quantiles used, must range from 0 to 1
+    outshape : tuple
+        shape of the returned array as (n_samples, n_outputs, n_draws)
 
     Returns
     -------
-    out : numpy array of shape (n_predict_samples, n_qntl)
-        prediction for each quantile
+    out : numpy array of shape (n_samples, n_outputs, n_draws)
+        random sample array
     """
-    npred = pred_tree_node_ID.shape[0]
-    out = np.zeros((npred, *trainy.shape[1:], n_draws))*np.nan
-    for i in prange(pred_tree_node_ID.shape[0]):
+    npred = outshape[0]
+    n_draws = outshape[-1]
+    out = np.zeros(outshape)*np.nan
+    for i in prange(outshape[0]):
         idxs = np.where(train_tree_node_ID == pred_tree_node_ID[i, :])[0]
-        sample_idx = np.random.choice(idxs, n_draws)#, replace=False)
+        sample_idx = np.random.choice(idxs, n_draws)
         out[i, :] = trainy[sample_idx].T
     return out
 
@@ -195,7 +195,7 @@ class QuantileRandomForestRegressor:
             pred_tree_node_ID[:, i] = self.forest.estimators_[i].apply(X)
 
         ypred_draws = find_sample(self.trainy, train_tree_node_ID,
-                                pred_tree_node_ID, n_draws)
+                                pred_tree_node_ID, (npred, *self.trainy.shape[1:], n_draws))
 
         return ypred_draws
 
