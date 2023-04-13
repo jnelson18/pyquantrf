@@ -260,4 +260,4 @@ class QuantileRandomForestRegressor:
         self : object
             Estimator instance.
         """
-        return self.forestset_params(**params)
+        self.forest.set_params(**params)
