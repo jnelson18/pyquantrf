@@ -166,7 +166,7 @@ class QuantileRandomForestRegressor:
 
         return ypred_pcts
     
-    def predict_sample(self, X, n_draws):
+    def predict_sample(self, X, n_draws, mapto=None):
         """
         Predict regression target for X.
         The predicted regression target of an input sample is computed as a
@@ -179,6 +179,8 @@ class QuantileRandomForestRegressor:
             converted into a sparse ``csr_matrix``.
         n_sample : {int}
             number of sample to draw from the predicted regression targets
+        mapto : {array-like, sparse matrix} of shape (n_samples,) or (n_samples, n_outputs)
+            a feature of the same shape as the original training y to map the predictions to.
         Returns
         -------
         y : ndarray of shape (n_samples, n_draws) or (n_samples, n_outputs, n_draws)
@@ -194,7 +196,13 @@ class QuantileRandomForestRegressor:
             train_tree_node_ID[:, i] = self.forest.estimators_[i].apply(self.trainX)
             pred_tree_node_ID[:, i] = self.forest.estimators_[i].apply(X)
 
-        ypred_draws = find_sample(self.trainy, train_tree_node_ID,
+        if mapto is None:
+            train_target = self.trainy
+        else:
+            assert mapto.shape==self.trainy.shape, "`mapto` must be a numpy array of the same shape as the training y."
+            train_target = mapto
+            
+        ypred_draws = find_sample(train_target, train_tree_node_ID,
                                 pred_tree_node_ID, (npred, *self.trainy.shape[1:], n_draws))
 
         return ypred_draws
