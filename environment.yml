@@ -1,7 +1,7 @@
-name: tea
+name: pyquantrf
 channels:
   - conda-forge
-  - defaults
+  - no-defaults
 dependencies:
   - python
   - numpy
